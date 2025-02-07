@@ -97,23 +97,21 @@ if (isCurrentPage('schedule.html')) {
         }
         
         scheduleContainer.innerHTML = days.map(day => `
-            <div class="day-schedule">
-                <h2>${day}</h2>
+            <div class="day-row">
+                <div class="day-name">${day}</div>
                 <div class="day-classes">
                     ${schedule[day].map(classInfo => `
                         <div class="class-item">
-                            <div class="class-info">
-                                <span class="class-time">${classInfo.time}</span>
-                                <span class="class-subject">${classInfo.subject}</span>
-                            </div>
+                            <span class="class-time">${classInfo.time}</span>
+                            <span class="class-subject">${classInfo.subject}</span>
                             <button class="delete-class-btn" 
-                                    onclick="deleteClass('${day}', '${classInfo.time}', '${classInfo.subject}')">
-                                Delete
+                                    onclick="deleteClass('${day}', '${classInfo.id}')">
+                                ×
                             </button>
                         </div>
-                    `).join('') || '<p>No classes scheduled</p>'}
+                    `).join('')}
+                    <button class="add-class-btn" onclick="openAddClassModal('${day}')">+</button>
                 </div>
-                <button class="add-class-btn" onclick="openAddClassModal('${day}')">+ Add Class</button>
             </div>
         `).join('');
 
@@ -128,17 +126,21 @@ if (isCurrentPage('schedule.html')) {
         selectedDay = day;
         modal.style.display = 'block';
         document.getElementById('classTime').value = '';
+        // Force reflow
+        modal.offsetHeight;
+        modal.classList.add('visible');
     };
 
     window.closeModal = function() {
-        modal.style.display = 'none';
+        modal.classList.remove('visible');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 200); // Match the transition duration
     };
 
-    window.deleteClass = function(day, time, subject) {
+    window.deleteClass = function(day, classId) {
         const schedule = getSchedule();
-        schedule[day] = schedule[day].filter(classInfo => 
-            !(classInfo.time === time && classInfo.subject === subject)
-        );
+        schedule[day] = schedule[day].filter(classInfo => classInfo.id !== classId);
         localStorage.setItem('schedule', JSON.stringify(schedule));
         displaySchedule();
     };
@@ -150,8 +152,9 @@ if (isCurrentPage('schedule.html')) {
         
         const schedule = getSchedule();
         
-        // Sort classes by time
-        schedule[selectedDay].push({ subject, time });
+        // Add unique ID to each class
+        const classId = `${subject}_${time}_${Date.now()}`;
+        schedule[selectedDay].push({ id: classId, subject, time });
         schedule[selectedDay].sort((a, b) => a.time.localeCompare(b.time));
         
         localStorage.setItem('schedule', JSON.stringify(schedule));
@@ -171,41 +174,76 @@ if (isCurrentPage('schedule.html')) {
 
 // Dashboard page functionality
 if (isCurrentPage('index.html')) {
-    const todayClasses = document.getElementById('todayClasses');
+    const todayClassesDiv = document.getElementById('todayClasses');
     const attendanceSummary = document.getElementById('attendanceSummary');
+    const selectedDateElement = document.getElementById('selectedDate');
+    let currentDate = new Date();
+
+    function formatDate(date) {
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        return date.toLocaleDateString('en-US', options);
+    }
+
+    function updateDateDisplay() {
+        selectedDateElement.textContent = formatDate(currentDate);
+        updateNavigationButtons();
+    }
+
+    window.changeDay = function(offset) {
+        const newDate = new Date(currentDate);
+        newDate.setDate(newDate.getDate() + offset);
+        
+        // Don't allow future dates
+        if (newDate > new Date()) {
+            return;
+        }
+        
+        currentDate = newDate;
+        updateDateDisplay();
+        displayTodayClasses();
+    };
+
+    window.goToToday = function() {
+        currentDate = new Date();
+        updateDateDisplay();
+        displayTodayClasses();
+    };
 
     function getCurrentDaySchedule() {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const today = days[new Date().getDay()];
-        return today === 'Sunday' || today === 'Saturday' 
-            ? [] 
-            : getSchedule()[today].map(classInfo => classInfo.subject);
+        const dayOfWeek = days[currentDate.getDay()];
+        return dayOfWeek === 'Sunday' || dayOfWeek === 'Saturday' ? [] : getSchedule()[dayOfWeek];
     }
 
     function displayTodayClasses() {
-        const todaySubjects = getCurrentDaySchedule();
+        const todayClasses = getCurrentDaySchedule();
         const attendance = getAttendance();
-        const today = new Date().toISOString().split('T')[0];
+        const dateString = currentDate.toISOString().split('T')[0];
 
-        todayClasses.innerHTML = todaySubjects.length ? todaySubjects.map(subject => `
+        todayClassesDiv.innerHTML = todayClasses.length ? todayClasses.map(classInfo => `
             <div class="attendance-card">
-                <span>${subject}</span>
+                <span>${classInfo.subject} (${classInfo.time})</span>
                 <div class="attendance-options">
-                    <button onclick="markAttendance('${subject}', 'attended', '${today}')" 
-                            class="${attendance[today]?.[subject] === 'attended' ? 'selected' : ''}">
+                    <button onclick="markAttendance('${classInfo.id}', 'attended', '${dateString}')" 
+                            class="${attendance[dateString]?.[classInfo.id] === 'attended' ? 'selected' : ''}">
                         Attended
                     </button>
-                    <button onclick="markAttendance('${subject}', 'missed', '${today}')"
-                            class="${attendance[today]?.[subject] === 'missed' ? 'selected' : ''}">
+                    <button onclick="markAttendance('${classInfo.id}', 'missed', '${dateString}')"
+                            class="${attendance[dateString]?.[classInfo.id] === 'missed' ? 'selected' : ''}">
                         Missed
                     </button>
-                    <button onclick="markAttendance('${subject}', 'noClass', '${today}')"
-                            class="${attendance[today]?.[subject] === 'noClass' ? 'selected' : ''}">
+                    <button onclick="markAttendance('${classInfo.id}', 'noClass', '${dateString}')"
+                            class="${attendance[dateString]?.[classInfo.id] === 'noClass' ? 'selected' : ''}">
                         No Class
                     </button>
                 </div>
             </div>
-        `).join('') : '<p>No classes scheduled for today</p>';
+        `).join('') : '<p>No classes scheduled for this day</p>';
     }
 
     function displayAttendanceSummary() {
@@ -216,22 +254,30 @@ if (isCurrentPage('index.html')) {
             let attended = 0;
             let total = 0;
 
-            Object.values(attendance).forEach(dayAttendance => {
-                if (dayAttendance[subject]) {
-                    if (dayAttendance[subject] !== 'noClass') {
-                        total++;
-                        if (dayAttendance[subject] === 'attended') {
-                            attended++;
+            Object.entries(attendance).forEach(([date, dayAttendance]) => {
+                Object.entries(dayAttendance).forEach(([classId, status]) => {
+                    if (classId.startsWith(subject + '_')) {
+                        if (status !== 'noClass') {
+                            total++;
+                            if (status === 'attended') {
+                                attended++;
+                            }
                         }
                     }
-                }
+                });
             });
 
             const percentage = total === 0 ? 0 : Math.round((attended / total) * 100);
+            const attendanceClass = percentage >= 75 ? 'high' : 
+                                  percentage >= 50 ? 'medium' : 'low';
+            
             return `
                 <div class="attendance-summary-item">
                     <h3>${subject}</h3>
-                    <p>Attendance: ${percentage}% (${attended}/${total} classes)</p>
+                    <div class="attendance-percentage ${attendanceClass}">${percentage}%</div>
+                    <div class="attendance-details">
+                        ${attended}/${total} classes attended
+                    </div>
                 </div>
             `;
         });
@@ -239,17 +285,38 @@ if (isCurrentPage('index.html')) {
         attendanceSummary.innerHTML = summary.join('');
     }
 
-    window.markAttendance = function(subject, status, date) {
+    window.markAttendance = function(classId, status, date) {
         const attendance = getAttendance();
         if (!attendance[date]) {
             attendance[date] = {};
         }
-        attendance[date][subject] = status;
+        attendance[date][classId] = status;
         localStorage.setItem('attendance', JSON.stringify(attendance));
         displayTodayClasses();
         displayAttendanceSummary();
     };
 
+    // Optionally, disable the forward arrow if we're on the current date
+    function updateNavigationButtons() {
+        const forwardButton = document.querySelector('.nav-btn:last-child');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const currentDay = new Date(currentDate);
+        currentDay.setHours(0, 0, 0, 0);
+        
+        if (currentDay.getTime() === today.getTime()) {
+            forwardButton.disabled = true;
+            forwardButton.style.opacity = '0.5';
+            forwardButton.style.cursor = 'not-allowed';
+        } else {
+            forwardButton.disabled = false;
+            forwardButton.style.opacity = '1';
+            forwardButton.style.cursor = 'pointer';
+        }
+    }
+
+    // Initialize the display
+    updateDateDisplay();
     displayTodayClasses();
     displayAttendanceSummary();
 } 
