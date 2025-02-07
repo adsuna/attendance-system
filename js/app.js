@@ -79,7 +79,10 @@ if (isCurrentPage('subjects.html')) {
 // Schedule page functionality
 if (isCurrentPage('schedule.html')) {
     const scheduleContainer = document.getElementById('scheduleContainer');
+    const modal = document.getElementById('addClassModal');
+    const addClassForm = document.getElementById('addClassForm');
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    let selectedDay = '';
 
     function displaySchedule() {
         const schedule = getSchedule();
@@ -96,25 +99,72 @@ if (isCurrentPage('schedule.html')) {
         scheduleContainer.innerHTML = days.map(day => `
             <div class="day-schedule">
                 <h2>${day}</h2>
-                <select multiple class="subject-select" data-day="${day}" size="${Math.min(subjects.length, 8)}">
-                    ${subjects.map(subject => `
-                        <option value="${subject}" ${schedule[day].includes(subject) ? 'selected' : ''}>
-                            ${subject}
-                        </option>
-                    `).join('')}
-                </select>
+                <div class="day-classes">
+                    ${schedule[day].map(classInfo => `
+                        <div class="class-item">
+                            <div class="class-info">
+                                <span class="class-time">${classInfo.time}</span>
+                                <span class="class-subject">${classInfo.subject}</span>
+                            </div>
+                            <button class="delete-class-btn" 
+                                    onclick="deleteClass('${day}', '${classInfo.time}', '${classInfo.subject}')">
+                                Delete
+                            </button>
+                        </div>
+                    `).join('') || '<p>No classes scheduled</p>'}
+                </div>
+                <button class="add-class-btn" onclick="openAddClassModal('${day}')">+ Add Class</button>
             </div>
         `).join('');
 
-        document.querySelectorAll('.subject-select').forEach(select => {
-            select.addEventListener('change', function() {
-                const selectedSubjects = Array.from(this.selectedOptions).map(option => option.value);
-                const schedule = getSchedule();
-                schedule[this.dataset.day] = selectedSubjects;
-                localStorage.setItem('schedule', JSON.stringify(schedule));
-            });
-        });
+        // Update subject options in modal
+        const subjectSelect = document.getElementById('classSubject');
+        subjectSelect.innerHTML = subjects.map(subject => 
+            `<option value="${subject}">${subject}</option>`
+        ).join('');
     }
+
+    window.openAddClassModal = function(day) {
+        selectedDay = day;
+        modal.style.display = 'block';
+        document.getElementById('classTime').value = '';
+    };
+
+    window.closeModal = function() {
+        modal.style.display = 'none';
+    };
+
+    window.deleteClass = function(day, time, subject) {
+        const schedule = getSchedule();
+        schedule[day] = schedule[day].filter(classInfo => 
+            !(classInfo.time === time && classInfo.subject === subject)
+        );
+        localStorage.setItem('schedule', JSON.stringify(schedule));
+        displaySchedule();
+    };
+
+    addClassForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const subject = document.getElementById('classSubject').value;
+        const time = document.getElementById('classTime').value;
+        
+        const schedule = getSchedule();
+        
+        // Sort classes by time
+        schedule[selectedDay].push({ subject, time });
+        schedule[selectedDay].sort((a, b) => a.time.localeCompare(b.time));
+        
+        localStorage.setItem('schedule', JSON.stringify(schedule));
+        closeModal();
+        displaySchedule();
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
 
     displaySchedule();
 }
@@ -127,7 +177,9 @@ if (isCurrentPage('index.html')) {
     function getCurrentDaySchedule() {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const today = days[new Date().getDay()];
-        return today === 'Sunday' || today === 'Saturday' ? [] : getSchedule()[today];
+        return today === 'Sunday' || today === 'Saturday' 
+            ? [] 
+            : getSchedule()[today].map(classInfo => classInfo.subject);
     }
 
     function displayTodayClasses() {

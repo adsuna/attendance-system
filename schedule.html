@@ -24,6 +24,23 @@
         </div>
     </main>
 
+    <!-- Add Class Modal -->
+    <div id="addClassModal" class="modal">
+        <div class="modal-content">
+            <h2>Add Class</h2>
+            <form id="addClassForm">
+                <select id="classSubject" required>
+                    <!-- Subjects will be populated here -->
+                </select>
+                <input type="time" id="classTime" required>
+                <div class="modal-buttons">
+                    <button type="submit">Add</button>
+                    <button type="button" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="js/app.js"></script>
 </body>
 </html> 
