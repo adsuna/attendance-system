@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker - Subjects</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Dashboard</a>
+        <a href="subjects.html" class="active">Manage Subjects</a>
+        <a href="schedule.html">Set Schedule</a>
+    </nav>
+    
+    <main>
+        <h1>Manage Subjects</h1>
+        <form id="addSubjectForm">
+            <input type="text" id="subjectName" placeholder="Enter subject name" required>
+            <button type="submit">Add Subject</button>
+        </form>
+
+        <div id="subjectsList">
+            <!-- Subjects will be populated here -->
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+</html> 

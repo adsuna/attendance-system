@@ -1,0 +1,117 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+nav {
+    margin-bottom: 20px;
+    padding: 10px 0;
+    border-bottom: 2px solid #eee;
+}
+
+nav a {
+    text-decoration: none;
+    color: #333;
+    margin-right: 20px;
+    padding: 5px 10px;
+}
+
+nav a.active {
+    background-color: #333;
+    color: white;
+    border-radius: 4px;
+}
+
+h1, h2 {
+    margin-bottom: 20px;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+input, select, button {
+    padding: 8px;
+    margin-right: 10px;
+}
+
+button {
+    background-color: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 8px 16px;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+.subject-item, .attendance-card {
+    background-color: #f4f4f4;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.attendance-options button {
+    margin-right: 5px;
+}
+
+.attendance-options button.selected {
+    background-color: #4CAF50;
+}
+
+.day-schedule {
+    margin-bottom: 30px;
+    background-color: #f4f4f4;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.subject-select {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.subject-select option {
+    padding: 8px;
+    margin: 2px 0;
+    cursor: pointer;
+}
+
+.subject-select option:checked {
+    background-color: #333;
+    color: white;
+}
+
+.attendance-summary-item {
+    background-color: #f4f4f4;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+/* Add instructions text styling */
+.instructions {
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
+} 
